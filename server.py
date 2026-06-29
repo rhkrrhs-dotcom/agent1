@@ -120,5 +120,5 @@ def translate(api_key, text, target_language, tone, detail):
 
 
 if __name__ == "__main__":
-    print(f"Work Triage Board: http://{HOST}:{PORT}")
+    print(f"내 업무 에이전트: http://{HOST}:{PORT}")
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

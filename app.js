@@ -274,7 +274,7 @@ function toMarkdown(tasks) {
     done: "완료",
   };
 
-  return ["# 업무 정리", "", ...tasks.map((task) => {
+  return ["# 내 업무 에이전트", "", ...tasks.map((task) => {
     const owner = task.owner ? ` 담당: ${task.owner}` : "";
     const due = task.due ? ` 마감: ${task.due}` : "";
     return `- [${task.status === "done" ? "x" : " "}] ${task.title} (${statusLabel[task.status]})${owner}${due}`;
