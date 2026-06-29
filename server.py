@@ -38,8 +38,7 @@ class Handler(SimpleHTTPRequestHandler):
         except json.JSONDecodeError:
             self.send_json({"error": "요청 형식이 올바르지 않습니다."}, 400)
         except HTTPError as error:
-            detail = error.read().decode("utf-8", errors="replace")
-            self.send_json({"error": f"OpenAI API 오류: {detail}"}, error.code)
+            self.send_json({"error": openai_error_message(error)}, error.code)
         except URLError as error:
             self.send_json({"error": f"네트워크 오류: {error.reason}"}, 502)
         except Exception as error:
@@ -52,6 +51,26 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+
+def openai_error_message(error):
+    detail = error.read().decode("utf-8", errors="replace")
+    try:
+        payload = json.loads(detail)
+        api_error = payload.get("error", {})
+        code = api_error.get("code")
+        message = api_error.get("message", detail)
+    except json.JSONDecodeError:
+        code = ""
+        message = detail
+
+    if code == "insufficient_quota":
+        return (
+            "OpenAI API 사용 가능 한도가 부족합니다. "
+            "Platform의 Billing/Usage에서 결제 수단, 크레딧, 프로젝트 한도를 확인한 뒤 서버를 다시 실행하세요."
+        )
+
+    return f"OpenAI API 오류: {message}"
 
 
 def translate(api_key, text, target_language, tone):
