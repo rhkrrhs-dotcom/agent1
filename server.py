@@ -28,12 +28,13 @@ class Handler(SimpleHTTPRequestHandler):
             text = str(body.get("text", "")).strip()
             target_language = str(body.get("targetLanguage", "English")).strip()
             tone = str(body.get("tone", "business")).strip()
+            detail = str(body.get("detail", "brief")).strip()
 
             if not text:
                 self.send_json({"error": "번역할 내용이 비어 있습니다."}, 400)
                 return
 
-            translation = translate(api_key, text, target_language, tone)
+            translation = translate(api_key, text, target_language, tone, detail)
             self.send_json({"translation": translation})
         except json.JSONDecodeError:
             self.send_json({"error": "요청 형식이 올바르지 않습니다."}, 400)
@@ -73,11 +74,19 @@ def openai_error_message(error):
     return f"OpenAI API 오류: {message}"
 
 
-def translate(api_key, text, target_language, tone):
+def translate(api_key, text, target_language, tone, detail):
+    detail_instruction = (
+        "Return only the translated text, with no extra explanation."
+        if detail == "brief"
+        else (
+            "Return the translated text first. Then add a short '메모:' section in Korean "
+            "with 2-3 notes about tone, nuance, or wording choices."
+        )
+    )
     instructions = (
         "You are a careful business translator. Translate the user's text into "
         f"{target_language}. Use a {tone} tone. Preserve names, dates, task intent, "
-        "line breaks, and bullet structure. Return only the translated text."
+        f"line breaks, and bullet structure. {detail_instruction}"
     )
     payload = {
         "model": MODEL,

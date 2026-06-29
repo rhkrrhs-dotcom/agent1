@@ -31,6 +31,7 @@ const els = {
   translateOutput: document.querySelector("#translateOutput"),
   targetLanguage: document.querySelector("#targetLanguage"),
   translateTone: document.querySelector("#translateTone"),
+  translateDetail: document.querySelector("#translateDetail"),
   translateButton: document.querySelector("#translateButton"),
   translateStatus: document.querySelector("#translateStatus"),
   loadNoteForTranslate: document.querySelector("#loadNoteForTranslate"),
@@ -108,6 +109,7 @@ els.translateButton.addEventListener("click", async () => {
       text,
       targetLanguage: els.targetLanguage.value,
       tone: els.translateTone.value,
+      detail: els.translateDetail.value,
     });
     els.translateOutput.value = translated;
     setTranslateStatus("완료", "success");
