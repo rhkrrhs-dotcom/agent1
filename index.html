@@ -52,6 +52,48 @@ Slack에 런칭 일정 공유</textarea>
               <p>완료</p>
             </div>
           </div>
+
+          <section class="translator-panel" aria-label="ChatGPT 번역">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">ChatGPT</p>
+                <h2>번역</h2>
+              </div>
+              <span class="status-pill" id="translateStatus">준비</span>
+            </div>
+            <label for="translateInput">번역할 내용</label>
+            <textarea id="translateInput" spellcheck="false" placeholder="번역할 문장을 입력하세요."></textarea>
+            <div class="translate-options">
+              <label for="targetLanguage">
+                <span>언어</span>
+                <select id="targetLanguage">
+                  <option value="English">영어</option>
+                  <option value="Korean">한국어</option>
+                  <option value="Japanese">일본어</option>
+                  <option value="Chinese">중국어</option>
+                  <option value="Spanish">스페인어</option>
+                </select>
+              </label>
+              <label for="translateTone">
+                <span>톤</span>
+                <select id="translateTone">
+                  <option value="business">업무용</option>
+                  <option value="polite">정중하게</option>
+                  <option value="simple">쉽게</option>
+                </select>
+              </label>
+            </div>
+            <div class="form-row">
+              <button class="primary-button" type="button" id="translateButton">번역하기</button>
+              <button class="secondary-button" type="button" id="loadNoteForTranslate">메모 가져오기</button>
+            </div>
+            <label for="translateOutput">번역 결과</label>
+            <textarea id="translateOutput" readonly placeholder="결과가 여기에 표시됩니다."></textarea>
+            <div class="form-row">
+              <button class="secondary-button" type="button" id="copyTranslation">복사</button>
+              <button class="secondary-button" type="button" id="useTranslationAsNote">메모로 사용</button>
+            </div>
+          </section>
         </aside>
 
         <section class="board" aria-label="업무 보드">

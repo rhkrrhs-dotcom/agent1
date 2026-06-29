@@ -26,6 +26,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -118,7 +119,8 @@ label {
 }
 
 textarea,
-input {
+input,
+select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -128,7 +130,8 @@ input {
 }
 
 textarea:focus,
-input:focus {
+input:focus,
+select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(19, 111, 99, 0.14);
 }
@@ -194,6 +197,74 @@ textarea {
   color: var(--muted);
   font-size: 12px;
   font-weight: 750;
+}
+
+.translator-panel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panel-heading h2 {
+  font-size: 18px;
+}
+
+.status-pill {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: #edf2f7;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.status-pill.loading {
+  background: #ebf8ff;
+  color: var(--blue);
+}
+
+.status-pill.success {
+  background: #e6f4f1;
+  color: var(--accent-strong);
+}
+
+.status-pill.error {
+  background: #fff5f5;
+  color: var(--red);
+}
+
+.translator-panel textarea {
+  min-height: 108px;
+}
+
+.translator-panel label + textarea,
+.translator-panel .form-row + label {
+  margin-top: 12px;
+}
+
+.translate-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+select {
+  height: 38px;
+  padding: 0 10px;
+  color: var(--ink);
 }
 
 .board {
@@ -423,5 +494,9 @@ textarea {
 
   .task-list {
     min-height: 260px;
+  }
+
+  .translate-options {
+    grid-template-columns: 1fr;
   }
 }

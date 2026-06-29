@@ -27,6 +27,15 @@ const els = {
   },
   exportMarkdown: document.querySelector("#exportMarkdown"),
   clearDone: document.querySelector("#clearDone"),
+  translateInput: document.querySelector("#translateInput"),
+  translateOutput: document.querySelector("#translateOutput"),
+  targetLanguage: document.querySelector("#targetLanguage"),
+  translateTone: document.querySelector("#translateTone"),
+  translateButton: document.querySelector("#translateButton"),
+  translateStatus: document.querySelector("#translateStatus"),
+  loadNoteForTranslate: document.querySelector("#loadNoteForTranslate"),
+  copyTranslation: document.querySelector("#copyTranslation"),
+  useTranslationAsNote: document.querySelector("#useTranslationAsNote"),
   template: document.querySelector("#taskTemplate"),
 };
 
@@ -78,6 +87,50 @@ els.clearDone.addEventListener("click", () => {
   state.tasks = state.tasks.filter((task) => task.status !== "done");
   saveTasks();
   render();
+});
+
+els.loadNoteForTranslate.addEventListener("click", () => {
+  els.translateInput.value = els.noteInput.value.trim();
+});
+
+els.translateButton.addEventListener("click", async () => {
+  const text = els.translateInput.value.trim();
+  if (!text) {
+    setTranslateStatus("번역할 내용을 입력하세요.", "error");
+    return;
+  }
+
+  setTranslateStatus("번역 중", "loading");
+  els.translateButton.disabled = true;
+
+  try {
+    const translated = await translateText({
+      text,
+      targetLanguage: els.targetLanguage.value,
+      tone: els.translateTone.value,
+    });
+    els.translateOutput.value = translated;
+    setTranslateStatus("완료", "success");
+  } catch (error) {
+    els.translateOutput.value = "";
+    setTranslateStatus(error.message, "error");
+  } finally {
+    els.translateButton.disabled = false;
+  }
+});
+
+els.copyTranslation.addEventListener("click", async () => {
+  const text = els.translateOutput.value.trim();
+  if (!text) return;
+  await copyText(text);
+  setTranslateStatus("복사됨", "success");
+});
+
+els.useTranslationAsNote.addEventListener("click", () => {
+  const text = els.translateOutput.value.trim();
+  if (!text) return;
+  els.noteInput.value = text;
+  setTranslateStatus("메모에 넣음", "success");
 });
 
 function render() {
@@ -241,6 +294,28 @@ async function copyText(text) {
   buffer.select();
   document.execCommand("copy");
   buffer.remove();
+}
+
+async function translateText(payload) {
+  const response = await fetch("/api/translate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "번역 서버를 확인하세요.");
+  }
+
+  return data.translation;
+}
+
+function setTranslateStatus(message, type) {
+  els.translateStatus.textContent = message;
+  els.translateStatus.className = `status-pill ${type || ""}`.trim();
 }
 
 function loadTasks() {
