@@ -1,7 +1,9 @@
 const STORAGE_KEY = "work-triage-board-v1";
+const RADAR_STORAGE_KEY = "russia-banner-radar-v1";
 
 const state = {
   tasks: loadTasks(),
+  radar: loadRadar(),
   filter: "all",
   search: "",
 };
@@ -37,6 +39,13 @@ const els = {
   loadNoteForTranslate: document.querySelector("#loadNoteForTranslate"),
   copyTranslation: document.querySelector("#copyTranslation"),
   useTranslationAsNote: document.querySelector("#useTranslationAsNote"),
+  radarReport: document.querySelector("#radarReport"),
+  radarIdea: document.querySelector("#radarIdea"),
+  radarIdeaList: document.querySelector("#radarIdeaList"),
+  radarStatus: document.querySelector("#radarStatus"),
+  addRadarIdea: document.querySelector("#addRadarIdea"),
+  saveRadarReport: document.querySelector("#saveRadarReport"),
+  radarChecks: document.querySelectorAll("[data-radar-check]"),
   template: document.querySelector("#taskTemplate"),
 };
 
@@ -46,6 +55,7 @@ if (state.tasks.length === 0) {
 }
 
 render();
+renderRadar();
 
 els.form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -133,6 +143,33 @@ els.useTranslationAsNote.addEventListener("click", () => {
   if (!text) return;
   els.noteInput.value = text;
   setTranslateStatus("메모에 넣음", "success");
+});
+
+els.saveRadarReport.addEventListener("click", () => {
+  state.radar.report = els.radarReport.value.trim();
+  state.radar.updatedAt = Date.now();
+  saveRadar();
+  setRadarStatus("저장됨", "success");
+});
+
+els.addRadarIdea.addEventListener("click", () => {
+  addRadarIdea();
+});
+
+els.radarIdea.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addRadarIdea();
+  }
+});
+
+els.radarChecks.forEach((check) => {
+  check.addEventListener("change", () => {
+    state.radar.checks[check.dataset.radarCheck] = check.checked;
+    state.radar.updatedAt = Date.now();
+    saveRadar();
+    setRadarStatus("저장됨", "success");
+  });
 });
 
 function render() {
@@ -320,6 +357,69 @@ function setTranslateStatus(message, type) {
   els.translateStatus.className = `status-pill ${type || ""}`.trim();
 }
 
+function renderRadar() {
+  els.radarReport.value = state.radar.report || "";
+  els.radarChecks.forEach((check) => {
+    check.checked = Boolean(state.radar.checks[check.dataset.radarCheck]);
+  });
+  renderRadarIdeas();
+}
+
+function renderRadarIdeas() {
+  els.radarIdeaList.innerHTML = "";
+  if (state.radar.ideas.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state compact";
+    empty.textContent = "저장된 아이디어 없음";
+    els.radarIdeaList.append(empty);
+    return;
+  }
+
+  state.radar.ideas.forEach((idea) => {
+    const item = document.createElement("article");
+    item.className = "idea-card";
+    const text = document.createElement("p");
+    text.textContent = idea.text;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", "아이디어 삭제");
+    remove.addEventListener("click", () => {
+      state.radar.ideas = state.radar.ideas.filter((savedIdea) => savedIdea.id !== idea.id);
+      state.radar.updatedAt = Date.now();
+      saveRadar();
+      renderRadarIdeas();
+      setRadarStatus("저장됨", "success");
+    });
+    item.append(text, remove);
+    els.radarIdeaList.append(item);
+  });
+}
+
+function addRadarIdea() {
+  const text = els.radarIdea.value.trim();
+  if (!text) {
+    setRadarStatus("아이디어를 입력하세요.", "error");
+    return;
+  }
+
+  state.radar.ideas.unshift({
+    id: crypto.randomUUID(),
+    text,
+    createdAt: Date.now(),
+  });
+  els.radarIdea.value = "";
+  state.radar.updatedAt = Date.now();
+  saveRadar();
+  renderRadarIdeas();
+  setRadarStatus("저장됨", "success");
+}
+
+function setRadarStatus(message, type) {
+  els.radarStatus.textContent = message;
+  els.radarStatus.className = `status-pill ${type || ""}`.trim();
+}
+
 function loadTasks() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? [];
@@ -330,4 +430,25 @@ function loadTasks() {
 
 function saveTasks() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+}
+
+function loadRadar() {
+  try {
+    return {
+      report: "",
+      ideas: [],
+      checks: {},
+      ...(JSON.parse(localStorage.getItem(RADAR_STORAGE_KEY)) ?? {}),
+    };
+  } catch {
+    return {
+      report: "",
+      ideas: [],
+      checks: {},
+    };
+  }
+}
+
+function saveRadar() {
+  localStorage.setItem(RADAR_STORAGE_KEY, JSON.stringify(state.radar));
 }

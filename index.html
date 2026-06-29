@@ -140,6 +140,64 @@ Slack에 런칭 일정 공유</textarea>
               <div class="task-list" id="doneList"></div>
             </section>
           </div>
+
+          <section class="radar-panel" aria-label="러시아 배너 레이더">
+            <div class="radar-heading">
+              <div>
+                <p class="eyebrow">Russia Commerce</p>
+                <h2>러시아 배너 레이더</h2>
+              </div>
+              <span class="status-pill" id="radarStatus">저장됨</span>
+            </div>
+
+            <div class="radar-grid">
+              <article class="market-card">
+                <h3>Ozon</h3>
+                <p>블루 계열 CTA, 빠른 배송, 전자제품/생활 카테고리 프로모션 관찰</p>
+                <a href="https://www.ozon.ru/" target="_blank" rel="noreferrer">보기</a>
+              </article>
+              <article class="market-card">
+                <h3>Wildberries</h3>
+                <p>강한 할인 숫자, 패션/뷰티 중심 컬러 대비, 시즌 딜 노출 관찰</p>
+                <a href="https://www.wildberries.ru/" target="_blank" rel="noreferrer">보기</a>
+              </article>
+              <article class="market-card">
+                <h3>Yandex Market</h3>
+                <p>노랑 포인트, 신뢰형 카피, 가전/식품/배송 혜택 메시지 관찰</p>
+                <a href="https://market.yandex.ru/" target="_blank" rel="noreferrer">보기</a>
+              </article>
+              <article class="market-card">
+                <h3>Megamarket</h3>
+                <p>캐시백, 대형 기획전, 금융 혜택과 결합된 배너 표현 관찰</p>
+                <a href="https://megamarket.ru/" target="_blank" rel="noreferrer">보기</a>
+              </article>
+            </div>
+
+            <div class="radar-workspace">
+              <label for="radarReport">
+                <span>오늘 리포트</span>
+                <textarea id="radarReport" spellcheck="false" placeholder="매일 아침 받은 러시아 이커머스 배너 리포트를 붙여넣으세요."></textarea>
+              </label>
+              <div class="radar-side">
+                <h3>체크 포인트</h3>
+                <label class="check-row"><input type="checkbox" data-radar-check="color">색상 변화</label>
+                <label class="check-row"><input type="checkbox" data-radar-check="copy">할인/CTA 카피</label>
+                <label class="check-row"><input type="checkbox" data-radar-check="category">노출 카테고리</label>
+                <label class="check-row"><input type="checkbox" data-radar-check="season">시즌성/기념일</label>
+                <label class="check-row"><input type="checkbox" data-radar-check="layout">레이아웃/이미지 스타일</label>
+              </div>
+            </div>
+
+            <div class="idea-row">
+              <label for="radarIdea">
+                <span>배너 아이디어</span>
+                <input id="radarIdea" type="text" placeholder="예: 캐시백 숫자를 첫 화면에 더 크게 노출">
+              </label>
+              <button class="primary-button" type="button" id="addRadarIdea">추가</button>
+              <button class="secondary-button" type="button" id="saveRadarReport">저장</button>
+            </div>
+            <div class="idea-list" id="radarIdeaList" aria-label="저장된 배너 아이디어"></div>
+          </section>
         </section>
       </section>
     </main>
