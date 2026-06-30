@@ -46,6 +46,7 @@ const els = {
   radarIdea: document.querySelector("#radarIdea"),
   radarIdeaList: document.querySelector("#radarIdeaList"),
   radarStatus: document.querySelector("#radarStatus"),
+  updateRadar: document.querySelector("#updateRadar"),
   addRadarIdea: document.querySelector("#addRadarIdea"),
   saveRadarReport: document.querySelector("#saveRadarReport"),
   radarChecks: document.querySelectorAll("[data-radar-check]"),
@@ -166,6 +167,10 @@ els.saveRadarReport.addEventListener("click", () => {
   state.radar.updatedAt = Date.now();
   saveRadar();
   setRadarStatus("저장됨", "success");
+});
+
+els.updateRadar.addEventListener("click", async () => {
+  await updateRadarReport();
 });
 
 els.addRadarIdea.addEventListener("click", () => {
@@ -495,6 +500,27 @@ function renderRadar() {
     check.checked = Boolean(state.radar.checks[check.dataset.radarCheck]);
   });
   renderRadarIdeas();
+}
+
+async function updateRadarReport() {
+  setRadarStatus("업데이트 중", "loading");
+  els.updateRadar.disabled = true;
+  try {
+    const response = await fetch("/api/radar-update");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || "레이더 업데이트를 확인하세요.");
+    }
+    state.radar.report = data.report || "";
+    state.radar.updatedAt = Date.now();
+    els.radarReport.value = state.radar.report;
+    saveRadar();
+    setRadarStatus("업데이트됨", "success");
+  } catch (error) {
+    setRadarStatus(error.message, "error");
+  } finally {
+    els.updateRadar.disabled = false;
+  }
 }
 
 function renderRadarIdeas() {

@@ -4,6 +4,8 @@ import json
 import os
 import re
 import ssl
+from datetime import datetime
+from html import unescape
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -15,6 +17,13 @@ SHEET_CSV_URL = os.environ.get(
     "PROJECT_SHEET_CSV_URL",
     "https://docs.google.com/spreadsheets/d/1KYXN045UPgFDPARITozRtSCrJqQzcaWadPpUSdbBtFs/gviz/tq?tqx=out:csv&gid=0",
 )
+RADAR_SITES = [
+    ("Ozon", "https://www.ozon.ru/"),
+    ("Wildberries", "https://www.wildberries.ru/"),
+    ("Yandex Market", "https://market.yandex.ru/"),
+    ("Megamarket", "https://megamarket.ru/"),
+    ("Lamoda", "https://www.lamoda.ru/"),
+]
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -24,6 +33,13 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json({"projects": load_songon_projects()})
             except Exception as error:
                 self.send_json({"error": f"프로젝트 시트를 읽지 못했습니다: {error}"}, 502)
+            return
+
+        if self.path == "/api/radar-update":
+            try:
+                self.send_json({"report": build_radar_report()})
+            except Exception as error:
+                self.send_json({"error": f"러시아 배너 레이더 업데이트 실패: {error}"}, 502)
             return
 
         super().do_GET()
@@ -181,6 +197,88 @@ def detect_category(title):
     if match:
         return match.group(1)
     return "General"
+
+
+def build_radar_report():
+    today = datetime.now().strftime("%Y-%m-%d %H:%M")
+    observations = [inspect_site(name, url) for name, url in RADAR_SITES]
+    lines = [
+        f"# 러시아 배너 레이더 업데이트 ({today})",
+        "",
+        "## 사이트 접근 요약",
+    ]
+
+    for item in observations:
+        if item["ok"]:
+            lines.append(f"- {item['name']}: 접근 가능 · {item['title'] or '제목 확인 필요'}")
+        else:
+            lines.append(f"- {item['name']}: 접근 제한 또는 실패 · {item['error']}")
+
+    lines.extend(
+        [
+            "",
+            "## 오늘 확인할 그래픽 포인트",
+            "- 첫 화면 배너의 메인 색상과 CTA 버튼 대비",
+            "- 할인 숫자, 캐시백, 배송 혜택 같은 즉시 구매 유도 표현",
+            "- 전자제품, 패션/뷰티, 시즌 기획전 중 어느 카테고리가 앞에 나오는지",
+            "- 배너 이미지가 제품 중심인지, 모델/라이프스타일 중심인지",
+            "- 모바일 첫 화면에서 카피가 짧고 명확하게 보이는지",
+            "",
+            "## 배너 아이디어",
+            "- 할인율보다 혜택 조건을 한 줄로 먼저 보여주는 배너",
+            "- 캐시백/빠른 배송/한정 기간을 3단 정보 구조로 묶은 배너",
+            "- 러시아 마켓용으로 CTA를 크게 두고 상품 이미지는 오른쪽에 고정한 레이아웃",
+            "- 시즌성 색상 1개와 브랜드 색상 1개만 쓰는 단순 배너",
+            "- Ozon/WB 스타일 비교용 A/B 배너 두 세트 제작",
+            "",
+            "## 출처",
+        ]
+    )
+
+    for name, url in RADAR_SITES:
+        lines.append(f"- {name}: {url}")
+
+    lines.append("")
+    lines.append("참고: 이 버튼은 공개 페이지의 접근 상태와 기본 메타 정보를 기반으로 만든 초안입니다. 실제 배너 그래픽 세부 변화는 매일 9시 자동 리포트와 함께 비교해 주세요.")
+    return "\n".join(lines)
+
+
+def inspect_site(name, url):
+    try:
+        html = fetch_text(url)
+        return {
+            "name": name,
+            "ok": True,
+            "title": extract_title(html),
+            "error": "",
+        }
+    except Exception as error:
+        return {
+            "name": name,
+            "ok": False,
+            "title": "",
+            "error": str(error),
+        }
+
+
+def extract_title(html):
+    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    if title_match:
+        return clean_html_text(title_match.group(1))
+
+    meta_match = re.search(
+        r'<meta[^>]+(?:property|name)=["\'](?:og:title|title)["\'][^>]+content=["\']([^"\']+)["\']',
+        html,
+        re.IGNORECASE,
+    )
+    if meta_match:
+        return clean_html_text(meta_match.group(1))
+
+    return ""
+
+
+def clean_html_text(value):
+    return re.sub(r"\s+", " ", unescape(value)).strip()
 
 
 def translate(api_key, text, target_language, tone, detail):
