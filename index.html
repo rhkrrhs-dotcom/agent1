@@ -141,6 +141,53 @@ Slack에 런칭 일정 공유</textarea>
             </section>
           </div>
 
+          <section class="project-panel" aria-label="성곤 프로젝트와 데드라인">
+            <div class="radar-heading">
+              <div>
+                <p class="eyebrow">Google Sheet</p>
+                <h2>성곤 프로젝트 · 데드라인</h2>
+              </div>
+              <div class="panel-actions">
+                <span class="status-pill" id="projectStatus">대기</span>
+                <button class="secondary-button" type="button" id="syncProjects">동기화</button>
+              </div>
+            </div>
+
+            <div class="project-stats" aria-label="성곤 프로젝트 현황">
+              <div>
+                <span id="projectTotal">0</span>
+                <p>전체</p>
+              </div>
+              <div>
+                <span id="projectRecent">0</span>
+                <p>최근 30일</p>
+              </div>
+              <div>
+                <span id="projectOverdue">0</span>
+                <p>마감 지남</p>
+              </div>
+              <div>
+                <span id="projectUpcoming">0</span>
+                <p>다가옴</p>
+              </div>
+            </div>
+
+            <div class="board-toolbar compact-toolbar">
+              <div class="segmented" role="tablist" aria-label="프로젝트 보기">
+                <button class="segment active" type="button" data-project-filter="recent">최근</button>
+                <button class="segment" type="button" data-project-filter="upcoming">다가옴</button>
+                <button class="segment" type="button" data-project-filter="overdue">마감 지남</button>
+                <button class="segment" type="button" data-project-filter="all">전체</button>
+              </div>
+              <label class="search-box">
+                <span>프로젝트 검색</span>
+                <input id="projectSearch" type="search" autocomplete="off">
+              </label>
+            </div>
+
+            <div class="project-list" id="projectList"></div>
+          </section>
+
           <section class="radar-panel" aria-label="러시아 배너 레이더">
             <div class="radar-heading">
               <div>

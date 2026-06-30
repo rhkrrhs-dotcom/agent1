@@ -472,6 +472,15 @@ select {
   box-shadow: var(--shadow);
 }
 
+.project-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
 .radar-heading,
 .idea-row {
   display: flex;
@@ -485,8 +494,102 @@ select {
   margin-bottom: 14px;
 }
 
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .radar-heading h2 {
   font-size: 20px;
+}
+
+.project-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.project-stats div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcff;
+}
+
+.project-stats span {
+  display: block;
+  font-size: 24px;
+  font-weight: 850;
+}
+
+.project-stats p {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.compact-toolbar {
+  margin-bottom: 12px;
+}
+
+.project-list {
+  display: grid;
+  gap: 10px;
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.project-card {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--muted);
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.project-card.overdue {
+  border-left-color: var(--red);
+}
+
+.project-card.upcoming {
+  border-left-color: var(--accent);
+}
+
+.project-card.recent {
+  border-left-color: var(--blue);
+}
+
+.project-card-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.project-card h3 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.project-card span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #edf2f7;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.project-card p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .radar-grid {
@@ -625,6 +728,10 @@ select {
   .radar-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .project-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -668,5 +775,15 @@ select {
   .idea-row {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .panel-actions,
+  .project-card-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .project-stats {
+    grid-template-columns: 1fr;
   }
 }

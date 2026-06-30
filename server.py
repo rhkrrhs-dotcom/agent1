@@ -1,6 +1,9 @@
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import csv
 import json
 import os
+import re
+import ssl
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -8,9 +11,23 @@ from urllib.request import Request, urlopen
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("PORT", "8000"))
 MODEL = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
+SHEET_CSV_URL = os.environ.get(
+    "PROJECT_SHEET_CSV_URL",
+    "https://docs.google.com/spreadsheets/d/1KYXN045UPgFDPARITozRtSCrJqQzcaWadPpUSdbBtFs/gviz/tq?tqx=out:csv&gid=0",
+)
 
 
 class Handler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/api/projects":
+            try:
+                self.send_json({"projects": load_songon_projects()})
+            except Exception as error:
+                self.send_json({"error": f"프로젝트 시트를 읽지 못했습니다: {error}"}, 502)
+            return
+
+        super().do_GET()
+
     def do_POST(self):
         if self.path != "/api/translate":
             self.send_json({"error": "Not found"}, 404)
@@ -72,6 +89,98 @@ def openai_error_message(error):
         )
 
     return f"OpenAI API 오류: {message}"
+
+
+def load_songon_projects():
+    csv_text = fetch_text(SHEET_CSV_URL)
+    rows = list(csv.reader(csv_text.splitlines()))
+    if len(rows) < 3:
+        return []
+
+    dates = rows[0]
+    start = find_songon_row(rows)
+    end = len(rows)
+    for index in range(start + 1, len(rows)):
+        if rows[index] and rows[index][0].strip():
+            end = index
+            break
+
+    projects = []
+    for row in rows[start + 1 : end]:
+        for column in range(1, len(dates), 3):
+            sheet_date = cell(dates, column)
+            if not sheet_date:
+                continue
+
+            manager = cell(row, column)
+            title = cell(row, column + 1)
+            deadline = cell(row, column + 2)
+            if not (manager or title or deadline):
+                continue
+
+            sheet_iso = parse_sheet_date(sheet_date)
+            deadline_iso = parse_deadline(deadline, sheet_iso)
+            projects.append(
+                {
+                    "id": f"{sheet_iso or sheet_date}-{column}-{len(projects)}",
+                    "date": sheet_date,
+                    "dateIso": sheet_iso,
+                    "manager": manager,
+                    "title": title,
+                    "deadline": deadline,
+                    "deadlineIso": deadline_iso,
+                    "category": detect_category(title),
+                }
+            )
+
+    return sorted(projects, key=lambda item: item.get("dateIso") or "")
+
+
+def fetch_text(url):
+    request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    try:
+        with urlopen(request, timeout=30) as response:
+            return response.read().decode("utf-8-sig")
+    except URLError:
+        context = ssl._create_unverified_context()
+        with urlopen(request, timeout=30, context=context) as response:
+            return response.read().decode("utf-8-sig")
+
+
+def find_songon_row(rows):
+    for index, row in enumerate(rows):
+        first_cell = cell(row, 0).lower()
+        if "сонгон" in first_cell or "songon" in first_cell or "성곤" in first_cell:
+            return index
+    raise ValueError("성곤/Сонгон 행을 찾을 수 없습니다.")
+
+
+def cell(row, index):
+    return row[index].strip() if index < len(row) else ""
+
+
+def parse_sheet_date(value):
+    match = re.match(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})$", value.strip())
+    if not match:
+        return ""
+    day, month, year = match.groups()
+    return f"{year}-{int(month):02d}-{int(day):02d}"
+
+
+def parse_deadline(value, fallback_date):
+    match = re.match(r"^(\d{1,2})\.(\d{1,2})(?:\s+\d{1,2}:\d{2})?$", value.strip())
+    if not match or not fallback_date:
+        return ""
+    day, month = match.groups()
+    year = fallback_date.split("-", 1)[0]
+    return f"{year}-{int(month):02d}-{int(day):02d}"
+
+
+def detect_category(title):
+    match = re.search(r"\[([^\]]+)\]", title or "")
+    if match:
+        return match.group(1)
+    return "General"
 
 
 def translate(api_key, text, target_language, tone, detail):

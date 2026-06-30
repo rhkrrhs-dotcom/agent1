@@ -4,6 +4,9 @@ const RADAR_STORAGE_KEY = "russia-banner-radar-v1";
 const state = {
   tasks: loadTasks(),
   radar: loadRadar(),
+  projects: [],
+  projectFilter: "recent",
+  projectSearch: "",
   filter: "all",
   search: "",
 };
@@ -46,6 +49,17 @@ const els = {
   addRadarIdea: document.querySelector("#addRadarIdea"),
   saveRadarReport: document.querySelector("#saveRadarReport"),
   radarChecks: document.querySelectorAll("[data-radar-check]"),
+  syncProjects: document.querySelector("#syncProjects"),
+  projectStatus: document.querySelector("#projectStatus"),
+  projectSearch: document.querySelector("#projectSearch"),
+  projectFilters: document.querySelectorAll("[data-project-filter]"),
+  projectList: document.querySelector("#projectList"),
+  projectCounts: {
+    total: document.querySelector("#projectTotal"),
+    recent: document.querySelector("#projectRecent"),
+    overdue: document.querySelector("#projectOverdue"),
+    upcoming: document.querySelector("#projectUpcoming"),
+  },
   template: document.querySelector("#taskTemplate"),
 };
 
@@ -56,6 +70,8 @@ if (state.tasks.length === 0) {
 
 render();
 renderRadar();
+renderProjects();
+syncProjects();
 
 els.form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -169,6 +185,23 @@ els.radarChecks.forEach((check) => {
     state.radar.updatedAt = Date.now();
     saveRadar();
     setRadarStatus("저장됨", "success");
+  });
+});
+
+els.syncProjects.addEventListener("click", async () => {
+  await syncProjects();
+});
+
+els.projectSearch.addEventListener("input", (event) => {
+  state.projectSearch = event.target.value.trim().toLowerCase();
+  renderProjects();
+});
+
+els.projectFilters.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.projectFilter = button.dataset.projectFilter;
+    els.projectFilters.forEach((filter) => filter.classList.toggle("active", filter === button));
+    renderProjects();
   });
 });
 
@@ -355,6 +388,105 @@ async function translateText(payload) {
 function setTranslateStatus(message, type) {
   els.translateStatus.textContent = message;
   els.translateStatus.className = `status-pill ${type || ""}`.trim();
+}
+
+async function syncProjects() {
+  setProjectStatus("불러오는 중", "loading");
+  els.syncProjects.disabled = true;
+  try {
+    const response = await fetch("/api/projects");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || "프로젝트 시트를 확인하세요.");
+    }
+    state.projects = data.projects || [];
+    renderProjects();
+    setProjectStatus("동기화됨", "success");
+  } catch (error) {
+    setProjectStatus(error.message, "error");
+  } finally {
+    els.syncProjects.disabled = false;
+  }
+}
+
+function renderProjects() {
+  const enriched = state.projects.map((project) => ({
+    ...project,
+    status: projectStatus(project),
+  }));
+  const visible = enriched.filter(matchesProjectView);
+
+  els.projectCounts.total.textContent = enriched.length;
+  els.projectCounts.recent.textContent = enriched.filter(projectIsRecent).length;
+  els.projectCounts.overdue.textContent = enriched.filter((project) => project.status === "overdue").length;
+  els.projectCounts.upcoming.textContent = enriched.filter((project) => project.status === "upcoming").length;
+  els.projectList.innerHTML = "";
+
+  if (visible.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state compact";
+    empty.textContent = state.projects.length ? "조건에 맞는 프로젝트 없음" : "동기화를 눌러 시트에서 가져오기";
+    els.projectList.append(empty);
+    return;
+  }
+
+  visible.slice(0, 40).forEach((project) => {
+    els.projectList.append(renderProject(project));
+  });
+}
+
+function renderProject(project) {
+  const item = document.createElement("article");
+  item.className = `project-card ${project.status}`;
+  const head = document.createElement("div");
+  head.className = "project-card-head";
+  const title = document.createElement("h3");
+  title.textContent = project.title || "제목 없음";
+  const badge = document.createElement("span");
+  badge.textContent = project.category || "General";
+  head.append(title, badge);
+
+  const meta = document.createElement("p");
+  meta.textContent = [
+    project.manager && `매니저: ${project.manager}`,
+    project.date && `등록일: ${project.date}`,
+    project.deadline && `마감: ${project.deadline}`,
+  ].filter(Boolean).join(" · ");
+
+  item.append(head, meta);
+  return item;
+}
+
+function projectStatus(project) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = project.deadlineIso ? new Date(`${project.deadlineIso}T00:00:00`) : null;
+
+  if (due && due < today) return "overdue";
+  if (due && due >= today) return "upcoming";
+  if (projectIsRecent(project)) return "recent";
+  return "old";
+}
+
+function projectIsRecent(project) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const created = project.dateIso ? new Date(`${project.dateIso}T00:00:00`) : null;
+  const daysFromCreated = created ? Math.round((today - created) / 86400000) : Infinity;
+  return daysFromCreated >= 0 && daysFromCreated <= 30;
+}
+
+function matchesProjectView(project) {
+  const haystack = `${project.title} ${project.manager} ${project.category} ${project.deadline}`.toLowerCase();
+  if (state.projectSearch && !haystack.includes(state.projectSearch)) return false;
+  if (state.projectFilter === "all") return true;
+  if (state.projectFilter === "recent") return projectIsRecent(project);
+  return project.status === state.projectFilter;
+}
+
+function setProjectStatus(message, type) {
+  els.projectStatus.textContent = message;
+  els.projectStatus.className = `status-pill ${type || ""}`.trim();
 }
 
 function renderRadar() {
