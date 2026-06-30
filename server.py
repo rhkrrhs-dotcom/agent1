@@ -24,6 +24,7 @@ RADAR_SITES = [
     ("Megamarket", "https://megamarket.ru/"),
     ("Lamoda", "https://www.lamoda.ru/"),
 ]
+EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD"
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -40,6 +41,13 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json({"report": build_radar_report()})
             except Exception as error:
                 self.send_json({"error": f"러시아 배너 레이더 업데이트 실패: {error}"}, 502)
+            return
+
+        if self.path == "/api/exchange-rates":
+            try:
+                self.send_json(load_exchange_rates())
+            except Exception as error:
+                self.send_json({"error": f"환율을 불러오지 못했습니다: {error}"}, 502)
             return
 
         super().do_GET()
@@ -161,6 +169,22 @@ def fetch_text(url):
         context = ssl._create_unverified_context()
         with urlopen(request, timeout=30, context=context) as response:
             return response.read().decode("utf-8-sig")
+
+
+def load_exchange_rates():
+    payload = json.loads(fetch_text(EXCHANGE_RATE_URL))
+    rates = payload.get("rates", {})
+    usd_rub = float(rates["RUB"])
+    usd_krw = float(rates["KRW"])
+    updated = payload.get("time_last_update_utc") or payload.get("time_next_update_utc") or datetime.now().isoformat()
+
+    return {
+        "base": "USD",
+        "usdRub": usd_rub,
+        "usdKrw": usd_krw,
+        "rubKrw": usd_krw / usd_rub,
+        "updated": updated,
+    }
 
 
 def find_songon_row(rows):

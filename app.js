@@ -61,6 +61,11 @@ const els = {
     overdue: document.querySelector("#projectOverdue"),
     upcoming: document.querySelector("#projectUpcoming"),
   },
+  refreshFx: document.querySelector("#refreshFx"),
+  usdRub: document.querySelector("#usdRub"),
+  usdKrw: document.querySelector("#usdKrw"),
+  rubKrw: document.querySelector("#rubKrw"),
+  fxUpdated: document.querySelector("#fxUpdated"),
   template: document.querySelector("#taskTemplate"),
 };
 
@@ -73,6 +78,8 @@ render();
 renderRadar();
 renderProjects();
 syncProjects();
+syncFxRates();
+window.setInterval(syncFxRates, 5 * 60 * 1000);
 
 els.form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -208,6 +215,10 @@ els.projectFilters.forEach((button) => {
     els.projectFilters.forEach((filter) => filter.classList.toggle("active", filter === button));
     renderProjects();
   });
+});
+
+els.refreshFx.addEventListener("click", async () => {
+  await syncFxRates();
 });
 
 function render() {
@@ -576,6 +587,48 @@ function addRadarIdea() {
 function setRadarStatus(message, type) {
   els.radarStatus.textContent = message;
   els.radarStatus.className = `status-pill ${type || ""}`.trim();
+}
+
+async function syncFxRates() {
+  els.fxUpdated.textContent = "불러오는 중";
+  els.refreshFx.disabled = true;
+
+  try {
+    const response = await fetch("/api/exchange-rates");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || "환율을 확인하세요.");
+    }
+
+    els.usdRub.textContent = formatRate(data.usdRub, 2);
+    els.usdKrw.textContent = formatRate(data.usdKrw, 0);
+    els.rubKrw.textContent = formatRate(data.rubKrw, 2);
+    els.fxUpdated.textContent = `갱신 ${formatFxTime(data.updated)}`;
+  } catch (error) {
+    els.fxUpdated.textContent = error.message;
+  } finally {
+    els.refreshFx.disabled = false;
+  }
+}
+
+function formatRate(value, digits) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "--";
+  return new Intl.NumberFormat("ko-KR", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(number);
+}
+
+function formatFxTime(value) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return "방금";
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function loadTasks() {

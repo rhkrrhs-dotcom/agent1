@@ -252,6 +252,33 @@ Slack에 런칭 일정 공유</textarea>
       </section>
     </main>
 
+    <aside class="fx-widget" aria-label="실시간 환율 비교">
+      <div class="fx-head">
+        <div>
+          <p class="eyebrow">FX Live</p>
+          <h2>환율 비교</h2>
+        </div>
+        <button class="icon-button mini" type="button" id="refreshFx" title="환율 새로고침" aria-label="환율 새로고침">
+          <span aria-hidden="true">↻</span>
+        </button>
+      </div>
+      <div class="fx-rates">
+        <div>
+          <span>USD/RUB</span>
+          <strong id="usdRub">--</strong>
+        </div>
+        <div>
+          <span>USD/KRW</span>
+          <strong id="usdKrw">--</strong>
+        </div>
+        <div>
+          <span>RUB/KRW</span>
+          <strong id="rubKrw">--</strong>
+        </div>
+      </div>
+      <p class="fx-time" id="fxUpdated">대기</p>
+    </aside>
+
     <template id="taskTemplate">
       <article class="task-card">
         <div class="task-head">
