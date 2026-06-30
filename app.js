@@ -69,11 +69,6 @@ const els = {
   template: document.querySelector("#taskTemplate"),
 };
 
-if (state.tasks.length === 0) {
-  state.tasks = parseNotes(els.noteInput.value);
-  saveTasks();
-}
-
 render();
 renderRadar();
 renderProjects();
